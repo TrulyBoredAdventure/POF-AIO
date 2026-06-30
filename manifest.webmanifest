@@ -1,0 +1,16 @@
+{
+  "name": "POF AIO",
+  "short_name": "POF AIO",
+  "description": "All-in-one Player-Owned Farm assistant with automatic Animal Info scanning.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b110d",
+  "theme_color": "#142019",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    }
+  ]
+}
