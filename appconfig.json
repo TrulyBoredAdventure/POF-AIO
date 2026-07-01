@@ -1,7 +1,7 @@
 {
   "appName": "POF AIO",
   "description": "All-in-one RuneScape Player-Owned Farm and Ranch Out of Time assistant with automatic Animal Info scanning, animal ratings, pens, breeding, diseases, logs, buyers, food, and timers.",
-  "appUrl": "./index.html?v=2.6.2",
+  "appUrl": "./index.html?v=2.6.3",
   "configUrl": "./appconfig.json",
   "iconUrl": "./icon.png",
   "defaultWidth": 470,

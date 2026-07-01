@@ -1,6 +1,6 @@
 {
   "name": "pof-aio",
-  "version": "2.6.2",
+  "version": "2.6.3",
   "private": true,
   "description": "Standalone Alt1-ready all-in-one Player-Owned Farm and Ranch Out of Time assistant with automatic Animal Info scanning.",
   "scripts": {

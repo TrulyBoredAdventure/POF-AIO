@@ -3,9 +3,11 @@
 (() => {
   const root = typeof window !== 'undefined' ? window : globalThis;
   const ANIMAL_INFO_LAYOUT = {
-    id: 'animal-info-501x333-manor-ranch-2026-06',
+    id: 'animal-info-responsive-manor-ranch-2026-07',
     panelWidth: 501,
     panelHeight: 333,
+    maxPanelWidth: 760,
+    maxPanelHeight: 560,
     anchor: {
       xOffset: 190,
       yOffset: 3,
@@ -314,13 +316,13 @@
       anchorY: Number(match.y)
     })).filter(origin => (
       origin.x >= 0 && origin.y >= 0 &&
-      origin.x + ANIMAL_INFO_LAYOUT.panelWidth <= Number(api.rsWidth) &&
-      origin.y + ANIMAL_INFO_LAYOUT.panelHeight <= Number(api.rsHeight)
+      origin.x < Number(api.rsWidth) - 120 &&
+      origin.y < Number(api.rsHeight) - 120
     ));
     if (!valid.length) {
       return {
         ok: false,
-        error: 'Animal Info was not found. Keep the complete window visible and use the same interface scale as the supplied 501×333 calibration screenshot.',
+        error: 'Animal Info was not found. Keep the complete window visible and use the the complete Animal Info window visible and unobstructed.',
         handle
       };
     }
@@ -364,13 +366,15 @@
 
     let panelImage = null;
     try {
+      const captureWidth = Math.max(1, Math.min(ANIMAL_INFO_LAYOUT.maxPanelWidth, Number(api.rsWidth) - located.origin.x));
+      const captureHeight = Math.max(1, Math.min(ANIMAL_INFO_LAYOUT.maxPanelHeight, Number(api.rsHeight) - located.origin.y));
       panelImage = readBoundRegion(
         api,
         located.handle,
         located.origin.x,
         located.origin.y,
-        ANIMAL_INFO_LAYOUT.panelWidth,
-        ANIMAL_INFO_LAYOUT.panelHeight
+        captureWidth,
+        captureHeight
       );
     } catch (error) {
       return {
@@ -393,7 +397,9 @@
 
     let visionResult;
     try {
-      visionResult = root.POF_VISION.readPanel(panelImage);
+      visionResult = typeof root.POF_VISION.readPanelResponsive === 'function'
+        ? root.POF_VISION.readPanelResponsive(panelImage)
+        : root.POF_VISION.readPanel(panelImage);
     } catch (error) {
       return {
         ok: false,
@@ -416,7 +422,7 @@
     return {
       ok: enough,
       partial: !enough && Boolean(rawText),
-      error: enough ? '' : 'Animal Info was found, but one or more required fields could not be read. Keep the full 501×333 panel unobstructed; the recognised text is available below for correction.',
+      error: enough ? '' : 'Animal Info was found, but one or more required fields could not be read. Keep the entire Animal Info window visible and unobstructed; the recognised text is available below for correction.',
       origin: located.origin,
       matches: located.matches,
       layout: ANIMAL_INFO_LAYOUT.id,

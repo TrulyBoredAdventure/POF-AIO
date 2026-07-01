@@ -149,7 +149,7 @@
     $('environment').className = `environment ${alt.detected ? 'connected' : ''}`;
     $('add-app').hidden = alt.detected;
     $('add-app').href = INSTALL_URL;
-    $('app-version').textContent = '2.6.2';
+    $('app-version').textContent = '2.6.3';
   }
 
   function metric(label, value, detail, className = '', attributes = '') {

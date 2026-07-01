@@ -192,12 +192,12 @@ test('covers every supported breed in scanner candidates', () => {
   }
 });
 
-test('captures the full Animal Info panel and uses the dedicated POF reader', () => {
-  const originalReadPanel = POF_VISION.readPanel;
+test('captures a responsive Animal Info region and uses the dedicated POF reader', () => {
+  const originalReadPanelResponsive = POF_VISION.readPanelResponsive;
   const captures = [];
-  POF_VISION.readPanel = image => {
-    assert.equal(image.width, 501);
-    assert.equal(image.height, 333);
+  POF_VISION.readPanelResponsive = image => {
+    assert(image.width >= 501);
+    assert(image.height >= 333);
     return {
       fields: {
         name: 'SHANNA',
@@ -213,7 +213,7 @@ test('captures the full Animal Info panel and uses the dedicated POF reader', ()
     };
   };
   try {
-    const rgba = Buffer.alloc(501 * 333 * 4, 255);
+    const rgba = Buffer.alloc(760 * 560 * 4, 255);
     const api = {
       permissionPixel: true,
       rsLinked: true,
@@ -230,7 +230,7 @@ test('captures the full Animal Info panel and uses the dedicated POF reader', ()
     assert.equal(result.ok, true);
     assert.equal(result.origin.x, 12);
     assert.equal(result.origin.y, 24);
-    assert.deepEqual(captures, [{ x: 12, y: 24, width: 501, height: 333 }]);
+    assert.deepEqual(captures, [{ x: 12, y: 24, width: 760, height: 560 }]);
     assert.equal(result.diagnostics.engine, 'pof-glyph-reader-v4');
     assert.equal(result.parsed.name, 'SHANNA');
     assert.equal(result.parsed.species, 'Malletops');
@@ -241,7 +241,7 @@ test('captures the full Animal Info panel and uses the dedicated POF reader', ()
     assert.equal(result.parsed.happiness, 0);
     assert.deepEqual(result.parsed.traits, ['Giver']);
   } finally {
-    POF_VISION.readPanel = originalReadPanel;
+    POF_VISION.readPanelResponsive = originalReadPanelResponsive;
   }
 });
 

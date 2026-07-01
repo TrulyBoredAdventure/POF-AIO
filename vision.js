@@ -763,6 +763,102 @@
     return candidates;
   }
 
+
+  function cropImage(image, x, y, width, height) {
+    const out = new Uint8ClampedArray(Math.max(0, width * height * 4));
+    if (!image || !image.data || width <= 0 || height <= 0) return { width: Math.max(0, width), height: Math.max(0, height), data: out };
+    for (let yy = 0; yy < height; yy += 1) {
+      const sy = y + yy;
+      if (sy < 0 || sy >= image.height) continue;
+      for (let xx = 0; xx < width; xx += 1) {
+        const sx = x + xx;
+        if (sx < 0 || sx >= image.width) continue;
+        const src = (sx + sy * image.width) * 4;
+        const dst = (xx + yy * width) * 4;
+        out[dst] = image.data[src];
+        out[dst + 1] = image.data[src + 1];
+        out[dst + 2] = image.data[src + 2];
+        out[dst + 3] = image.data[src + 3];
+      }
+    }
+    return { width, height, data: out };
+  }
+
+  function resizeImage(image, width, height) {
+    const out = new Uint8ClampedArray(Math.max(0, width * height * 4));
+    if (!image || !image.data || !image.width || !image.height || width <= 0 || height <= 0) return { width: Math.max(0, width), height: Math.max(0, height), data: out };
+    for (let y = 0; y < height; y += 1) {
+      const sy = Math.min(image.height - 1, Math.max(0, Math.round((y + 0.5) * image.height / height - 0.5)));
+      for (let x = 0; x < width; x += 1) {
+        const sx = Math.min(image.width - 1, Math.max(0, Math.round((x + 0.5) * image.width / width - 0.5)));
+        const src = (sx + sy * image.width) * 4;
+        const dst = (x + y * width) * 4;
+        out[dst] = image.data[src];
+        out[dst + 1] = image.data[src + 1];
+        out[dst + 2] = image.data[src + 2];
+        out[dst + 3] = image.data[src + 3];
+      }
+    }
+    return { width, height, data: out };
+  }
+
+  function normalisePanelCandidate(image, width, height) {
+    const cropped = cropImage(image, 0, 0, Math.min(width, image.width), Math.min(height, image.height));
+    if (cropped.width === 501 && cropped.height === 333) return cropped;
+    return resizeImage(cropped, 501, 333);
+  }
+
+  function panelReadScore(result) {
+    if (!result || !result.fields) return -Infinity;
+    const fields = result.fields;
+    const required = ['name', 'stage', 'breed', 'health', 'happiness', 'trait1', 'trait2', 'trait3'];
+    let score = 0;
+    for (const field of required) if (fields[field]) score += 100;
+    for (const [key, diag] of Object.entries(result.diagnostics || {})) {
+      if (key === 'name') score += Number(diag.confidence || 0) * 0.3;
+      else score += Number(diag.confidence || 0) * 0.15;
+    }
+    if (fields.breed && /^Breed:\s.+\s\((?:male|female)\)$/i.test(fields.breed)) score += 80;
+    if (fields.health && fields.happiness) score += 40;
+    return score;
+  }
+
+  function readPanelResponsive(image) {
+    if (!image || !image.data || !image.width || !image.height) return readPanel(image);
+    const aspect = 501 / 333;
+    const dimensions = new Map();
+    const add = (width, height) => {
+      width = Math.round(width);
+      height = Math.round(height);
+      if (width < 300 || height < 200) return;
+      if (width > image.width || height > image.height) return;
+      dimensions.set(`${width}x${height}`, { width, height });
+    };
+
+    add(501, 333);
+    add(image.width, image.height);
+    add(Math.min(image.width, Math.round(image.height * aspect)), image.height);
+    add(image.width, Math.min(image.height, Math.round(image.width / aspect)));
+    for (const scale of [1.0, 1.01, 1.015, 1.02, 1.04, 1.06, 1.08, 1.10, 1.15, 1.20, 1.25, 1.30, 1.40, 1.50]) {
+      add(501 * scale, 333 * scale);
+    }
+
+    let best = null;
+    let bestScore = -Infinity;
+    const attempts = [];
+    for (const dim of dimensions.values()) {
+      const candidate = normalisePanelCandidate(image, dim.width, dim.height);
+      const result = readPanel(candidate);
+      const score = panelReadScore(result);
+      attempts.push({ width: dim.width, height: dim.height, score, fields: result.fields });
+      if (score > bestScore) {
+        bestScore = score;
+        best = { ...result, responsive: { sourceWidth: image.width, sourceHeight: image.height, usedWidth: dim.width, usedHeight: dim.height, score, attempts } };
+      }
+    }
+    return best || readPanel(image);
+  }
+
   function readPanel(image) {
     const stages = [...new Set([...(root.POF_DATA?.stages || []), 'Baby'])];
     const traits = [...(root.POF_DATA?.traits || []).map(trait => trait.name), 'No Trait'];
@@ -838,6 +934,9 @@
     dtwLineSimilarity,
     readName,
     readPanel,
+    readPanelResponsive,
+    cropImage,
+    resizeImage,
     maskFromRows,
     candidateCharacters
   };
